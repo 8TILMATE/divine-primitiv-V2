@@ -2,11 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Firebase.Database;
+using UnityEngine.UI;
 
 public class GetRestaurante : MonoBehaviour
 {
-    public static  List<MenuModel> meniuri = new List<MenuModel>();
+    public static List<MenuModel> meniuri = new List<MenuModel>();
     DatabaseReference reference;
+    public  GameObject taticul;
+    private  GameObject gam;
+    public  GameObject toSpawn;
     // Start is called before the first frame update
     void Start()
     {
@@ -18,6 +22,7 @@ public class GetRestaurante : MonoBehaviour
         var firebaseDatabase = FirebaseDatabase.GetInstance(app, DatabaseHelper.connectionString);
         reference = firebaseDatabase.RootReference;
         StartCoroutine(GetRestaurante1(reference));
+
     }
 
     // Update is called once per frame
@@ -47,6 +52,20 @@ public class GetRestaurante : MonoBehaviour
                 StartCoroutine(GetMeniu(model.Id.ToString(), reference));
                 model.Meniu = meniuri;
                 DatabaseHelper.restaurante.Add(model);
+            }
+        }
+        foreach (var x in DatabaseHelper.restaurante)
+        {
+            gam=Instantiate(toSpawn, taticul.transform.position, Quaternion.identity) as GameObject;
+            gam.transform.parent = taticul.transform;
+            foreach(Transform t in gam.transform)
+            {
+
+                Text text = t.GetComponent<Text>();
+                if (text)
+                {
+                    text.text = x.Nume;
+                }
             }
         }
 
