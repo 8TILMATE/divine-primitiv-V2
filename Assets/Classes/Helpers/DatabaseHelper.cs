@@ -8,8 +8,10 @@ public static class DatabaseHelper
 {
     public static List<UserModel> utilizatori = new List<UserModel>();
     public static UserModel utilizatorLogat = new UserModel();
+    public static List<RestaurantModel> restaurante = new List<RestaurantModel>();
     // Start is called before the first frame update
     public static  string connectionString = "https://divine-f6fa7-default-rtdb.europe-west1.firebasedatabase.app/";
+    public static List<List<MenuModel>> meniuri = new List<List<MenuModel>>();
    
 
     public static IEnumerator Login(string email,string parola, DatabaseReference reference)
