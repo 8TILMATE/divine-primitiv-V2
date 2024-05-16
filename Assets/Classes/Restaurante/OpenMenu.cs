@@ -50,6 +50,7 @@ public class OpenMenu : MonoBehaviour
                     GeneratedMenuItem = Instantiate(MenuPrefab, Container.transform.position, Quaternion.identity) as GameObject;
                     GeneratedMenuItem.name = i.ToString() + "_" + restaurant.Meniu[i].Nume;
                     GeneratedMenuItem.transform.parent = Container.transform;
+                    GeneratedMenuItem.transform.localScale = new Vector3(1, 1, 1);
                     foreach (Transform t in GeneratedMenuItem.transform)
                     {
 

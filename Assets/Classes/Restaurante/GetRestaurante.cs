@@ -57,7 +57,7 @@ public class GetRestaurante : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        SubTotalComanda.text = "Subtotal Comanda = " + DatabaseHelper.SubtotalComanda.ToString() + " lei";
+        SubTotalComanda.text = "Total = " + DatabaseHelper.SubtotalComanda.ToString() + " lei";
     }
     public  IEnumerator GetRestaurante1(DatabaseReference reference)
     {
@@ -100,7 +100,8 @@ public class GetRestaurante : MonoBehaviour
             gam=Instantiate(toSpawn, taticul.transform.position, Quaternion.identity) as GameObject;
             gam.name = x.Id.ToString()+"_"+x.Nume;
             gam.transform.parent = taticul.transform;
-            foreach(Transform t in gam.transform)
+            gam.gameObject.transform.localScale = new Vector3(1, 1, 1);
+            foreach (Transform t in gam.transform)
             {
 
                 Text text = t.GetComponent<Text>();
