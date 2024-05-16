@@ -8,12 +8,12 @@ using System.Threading;
 using Firebase.Database;
 using System.IO;
 using System.Threading.Tasks;
-
+using UnityEditor;
 
 public class PlaseazaComanda : MonoBehaviour
 {
 
-    private OpenAIApi openAi = new OpenAIApi("sk-proj-TbgHgQoQNLcH2C5limiQT3BlbkFJNed7C817K2uf9FWgNFsh", "org-gcb4HKEJ9NBpp0SAu3CbMWc9");
+    private OpenAIApi openAi = new OpenAIApi("sk-proj-GqexhIq0ST9udsYjK2vwT3BlbkFJYnYqaHsHvOFqATcbhZOX", "org-gcb4HKEJ9NBpp0SAu3CbMWc9");
     private List<ChatMessage> messages = new List<ChatMessage>();
     public string raspuns;
     private LivratorModel livrator;
@@ -52,7 +52,7 @@ public class PlaseazaComanda : MonoBehaviour
     void Start()
     {
         // StartChatGPTRequest("transform this into lat and lon coordinates 'Strada rizer nr55A, Galati, Romania''. Give me the results in this format: lat:;lon: without saying anything else");
-        AskGPT("transform this into lat and lon coordinates 'Strada rizer nr55A, Galati, Romania'. Give me the results in this format: ',' without saying anything else");
+        //AskGPT("transform this into lat and lon coordinates 'Strada rizer nr55A, Galati, Romania'. Give me the results in this format: ',' without saying anything else");
     
     }
 
@@ -61,9 +61,14 @@ public class PlaseazaComanda : MonoBehaviour
     {
         
     }
-    public async void PlaseazaComenzi()
+    public void PlaceOrder()
+    {
+        StartCoroutine(PlaseazaComenzi());
+    }
+    public IEnumerator PlaseazaComenzi()
     {
         AskGPT("transform this into lat and lon coordinates 'Strada rizer nr55A, Galati, Romania'. Give me the results in this format: ',' without saying anything else");
+        yield return new WaitForSeconds(3);
         var line = raspuns.Split(",");
 
         model = new ComandaModel
@@ -83,9 +88,124 @@ public class PlaseazaComanda : MonoBehaviour
         var app = Firebase.FirebaseApp.Create(options);
         var firebaseDatabase = FirebaseDatabase.GetInstance(app, DatabaseHelper.connectionString);
         reference = firebaseDatabase.RootReference;
-        StartCoroutine(calculus());
-        
+        var UserLog = reference.Child("Livratori").GetValueAsync();
+        yield return new WaitUntil(predicate: () => UserLog.IsCompleted);
+        DatabaseHelper.Livratori.Clear();
+        if (UserLog != null)
+        {
+            foreach (var y in UserLog.Result.Children)
+            {
+                LivratorModel user = new LivratorModel();
+                yield return new WaitForSeconds(0.1f);
+                user.Id = int.Parse(y.Key.ToString());
+                user.Email = y.Child("Email").GetValue(true).ToString();
+                user.Nume = y.Child("Nume").GetValue(true).ToString();
+               user.Telefon = y.Child("Telefon").GetValue(true).ToString();
+                user.Status = int.Parse(y.Child("Status").GetValue(true).ToString());
+                
+                DatabaseHelper.Livratori.Add(user);
+                //Debug.Log(user.Email);
+                
+            }
+        }
+        Task.Delay(100);
+        //StartCoroutine(calculus());
+        bool soferGasit = false;
+        foreach (var sofer in DatabaseHelper.Livratori)
+        {
+            if (sofer.Status == 0)
+            {
+                model.IdLivrator = sofer.Id;
+                model.LivratorLat = 28.02f;
+                model.LivratorLon = 45.45f;
+                DatabaseHelper.livratorComanda = sofer;
+                DatabaseHelper.comanda = model;
+                soferGasit = true;
+            }
+        }
+        if (!soferGasit)
+        {
+            EditorUtility.DisplayDialog("Eroare", "Rideri Indisponibili", "Ok");
+        }
+        else
+        {
+            int LastId = 0;
+            UserLog = reference.Child("Comenzi").GetValueAsync();
+            yield return new WaitUntil(predicate: () => UserLog.IsCompleted);
+            if (UserLog != null)
+            {
+                foreach (var y in UserLog.Result.Children)
+                {
+
+                    int Id = int.Parse(y.Key.ToString());
+                        //Email = y.Child("Email").GetValue(true).ToString(),
+                       // Nume = y.Child("Nume").GetValue(true).ToString(),
+                        //Parola = y.Child("Parola").GetValue(true).ToString(),
+                    
+                    if (Id > LastId)
+                    {
+                        LastId = Id;
+                    }
+                }
+            }
+            model.Id = LastId + 1;
+            reference.Child("Comenzi").Child(model.Id.ToString()).Child("AdresaLat").SetValueAsync(model.AdresaLat);
+            reference.Child("Comenzi").Child(model.Id.ToString()).Child("AdresaLon").SetValueAsync(model.AdresaLon);
+            reference.Child("Comenzi").Child(model.Id.ToString()).Child("IdLivrator").SetValueAsync(model.IdLivrator);
+            reference.Child("Comenzi").Child(model.Id.ToString()).Child("IdUser").SetValueAsync(model.IdUser);
+            reference.Child("Comenzi").Child(model.Id.ToString()).Child("IdRestaurant").SetValueAsync(model.IdRestaurant);
+            reference.Child("Comenzi").Child(model.Id.ToString()).Child("LivratorLat").SetValueAsync(model.LivratorLat);
+            reference.Child("Comenzi").Child(model.Id.ToString()).Child("LivratorLon").SetValueAsync(model.LivratorLon);
+            reference.Child("Comenzi").Child(model.Id.ToString()).Child("IdLivrator").SetValueAsync(model.IdLivrator);
+            foreach (MenuModel menu in model.Meniu)
+            {
+                reference.Child("Comenzi").Child(model.Id.ToString()).Child("Meniu").Child(menu.Nume).SetValueAsync(menu.Pret);
+            }
+            reference.Child("Comenzi").Child(model.Id.ToString()).Child("StatusComanda").SetValueAsync(model.StatusComanda);
+            EditorUtility.DisplayDialog("Comanda Plasata cu Succes", "Comanda plasata cu Succes", "Ok");
+        }
+
+
     }
+    public IEnumerator AddComandaToModel(ComandaModel model)
+    {
+        int LastId = 0;
+        var UserLog = reference.Child("Comenzi").GetValueAsync();
+        yield return new WaitUntil(predicate: () => UserLog.IsCompleted);
+        if (UserLog != null)
+        {
+            foreach (var y in UserLog.Result.Children)
+            {
+                UserModel user = new UserModel
+                {
+                    Id = int.Parse(y.Key.ToString()),
+                    //Email = y.Child("Email").GetValue(true).ToString(),
+                    //Nume = y.Child("Nume").GetValue(true).ToString(),
+                    //Parola = y.Child("Parola").GetValue(true).ToString(),
+                };
+                if (user.Id > LastId)
+                {
+                    LastId = user.Id;
+                }
+            }
+        }
+        model.Id = LastId + 1;
+        reference.Child("Comenzi").Child(model.Id.ToString()).Child("AdresaLat").SetValueAsync(model.AdresaLat);
+        reference.Child("Comenzi").Child(model.Id.ToString()).Child("AdresaLon").SetValueAsync(model.AdresaLon);
+        reference.Child("Comenzi").Child(model.Id.ToString()).Child("IdLivrator").SetValueAsync(model.IdLivrator);
+        reference.Child("Comenzi").Child(model.Id.ToString()).Child("IdUser").SetValueAsync(model.IdUser);
+        reference.Child("Comenzi").Child(model.Id.ToString()).Child("IdRestaurant").SetValueAsync(model.IdRestaurant);
+        reference.Child("Comenzi").Child(model.Id.ToString()).Child("LivratorLat").SetValueAsync(model.LivratorLat);
+        reference.Child("Comenzi").Child(model.Id.ToString()).Child("LivratorLon").SetValueAsync(model.LivratorLon);
+        reference.Child("Comenzi").Child(model.Id.ToString()).Child("IdLivrator").SetValueAsync(model.IdLivrator);
+        foreach(MenuModel menu in model.Meniu)
+        {
+            reference.Child("Livratori").Child(model.Id.ToString()).Child("Meniu").Child(menu.Nume).SetValueAsync(menu.Pret);
+        }
+        reference.Child("Livratori").Child(model.Id.ToString()).Child("StatusComanda").SetValueAsync(model.StatusComanda);
+        EditorUtility.DisplayDialog("Comanda Plasata cu Succes", "Comanda plasata cu Succes", "Ok");
+    }
+
     public IEnumerator calculus()
     {
 

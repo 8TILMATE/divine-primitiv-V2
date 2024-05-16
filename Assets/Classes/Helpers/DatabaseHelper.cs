@@ -18,6 +18,8 @@ public static class DatabaseHelper
     public static int SubtotalComanda = 0;
     public static List<ComandaModel> comenzi = new List<ComandaModel>();
     public static List<LivratorModel> Livratori = new List<LivratorModel>();
+    public static LivratorModel livratorComanda = new LivratorModel();
+    public static ComandaModel comanda = new ComandaModel();
 
    
 
