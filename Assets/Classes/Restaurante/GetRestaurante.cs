@@ -3,16 +3,43 @@ using System.Collections.Generic;
 using UnityEngine;
 using Firebase.Database;
 using UnityEngine.UI;
-
+using UnityEngine.Networking;
+using Firebase.Storage;
+using Firebase;
+using Firebase.Extensions;
+using Firebase.Extensions;
 public class GetRestaurante : MonoBehaviour
 {
-    public static List<MenuModel> meniuri = new List<MenuModel>();
+    public static List<List<MenuModel>> meniuri = new List<List<MenuModel>>();
     DatabaseReference reference;
     public  GameObject taticul;
     private  GameObject gam;
     public  GameObject toSpawn;
+    public GameObject Canvas1;
+    public GameObject Canvas2;
+    public GameObject Container;
+    public List<KeyValuePair<Texture2D, string>> texturi = new List<KeyValuePair<Texture2D, string>>();
     // Start is called before the first frame update
-    void Start()
+    RawImage rawImage ;
+    FirebaseStorage storage;
+    StorageReference storageReference;
+
+    IEnumerator LoadImage(string MediaUrl,string id)
+    {
+        UnityWebRequest request = UnityWebRequestTexture.GetTexture(MediaUrl); //Create a request
+        yield return request.SendWebRequest(); //Wait for the request to complete
+        if (request.isNetworkError || request.isHttpError)
+        {
+            Debug.Log(request.error);
+        }
+        else
+        {
+            texturi.Add(new KeyValuePair<Texture2D, string>(((DownloadHandlerTexture)request.downloadHandler).texture, id));
+            //rawImage.texture = ((DownloadHandlerTexture)request.downloadHandler).texture;
+            // setting the loaded image to our object
+        }
+    }
+        void Start()
     {
         Firebase.AppOptions options = new Firebase.AppOptions
         {
@@ -49,14 +76,27 @@ public class GetRestaurante : MonoBehaviour
                     OraDeschidere = int.Parse(y.Child("OraDeschidere").GetValue(true).ToString()),
                     OraInchidere = int.Parse(y.Child("OraInchidere").GetValue(true).ToString())
                 };
-                StartCoroutine(GetMeniu(model.Id.ToString(), reference));
-                model.Meniu = meniuri;
-                DatabaseHelper.restaurante.Add(model);
+                yield return StartCoroutine(GetMeniu(model.Id.ToString(), reference));
+                //model.Meniu = meniuri;
+                DatabaseHelper.restaurante.Add(new RestaurantModel 
+                {
+                    Id=model.Id,
+                    lat=model.lat,
+                    lon=model.lon,
+                    Nume=model.Nume,
+                    OraDeschidere=model.OraDeschidere,
+                    OraInchidere=model.OraInchidere,
+                });                
             }
+        }
+        for(int i = 0; i < DatabaseHelper.restaurante.Count; i++)
+        {
+            DatabaseHelper.restaurante[i].Meniu = meniuri[i];
         }
         foreach (var x in DatabaseHelper.restaurante)
         {
             gam=Instantiate(toSpawn, taticul.transform.position, Quaternion.identity) as GameObject;
+            gam.name = x.Id.ToString()+"_"+x.Nume;
             gam.transform.parent = taticul.transform;
             foreach(Transform t in gam.transform)
             {
@@ -66,20 +106,119 @@ public class GetRestaurante : MonoBehaviour
                 {
                     text.text = x.Nume;
                 }
+                RawImage rawraw= t.GetComponent<RawImage>();
+                Button button = t.GetComponent<Button>();
+                if (button != null)
+                {
+                    OpenMenu om = button.gameObject.GetComponent<OpenMenu>();
+                    if (om != null)
+                    {
+                        om.Canvas1 = Canvas1;
+                        om.Canvas2 = Canvas2;
+                        om.Container = Container;
+                    }
+                }
+                storage = FirebaseStorage.DefaultInstance;
+                storageReference = storage.GetReferenceFromUrl("gs://divine-f6fa7.appspot.com");
+                StorageReference image = storageReference.Child(x.Id.ToString()+".png");
+             
+                if (rawraw != null)
+                {
+                    rawraw.texture = new Texture2D(1, 1);
+                    rawImage = rawraw;
+                    image.GetDownloadUrlAsync().ContinueWithOnMainThread(task =>
+                    {
+                        if (!task.IsFaulted && !task.IsCanceled)
+                        {
+                             StartCoroutine(LoadImage((task.Result).ToString(), x.Id.ToString())); //Fetch file from the link
+                        }
+                        else
+                        {
+                            Debug.Log(task.Exception);
+                        }
+                    });
+                  
+                    /*
+                    Firebase.Storage.StorageReference storageReference =
+   Firebase.Storage.FirebaseStorage.DefaultInstance.GetReferenceFromUrl("gs://divine-f6fa7.appspot.com");
+
+                    storageReference.Child(x.Id.ToString()+".png").GetBytesAsync(1024 * 1024).
+                        ContinueWith((System.Threading.Tasks.Task<byte[]> task) =>
+                        {
+                            if (task.IsFaulted || task.IsCanceled)
+                            {
+                                Debug.Log(task.Exception.ToString());
+                            }
+                            else
+                            {
+                                byte[] fileContents = task.Result;
+                                Texture2D texture = new Texture2D(1, 1);
+                                texture.LoadImage(fileContents);
+                                rawImage.texture = texture;
+            //if you need sprite for SpriteRenderer or Image
+            /*
+            Sprite sprite = Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width,
+                                texture.height), new Vector2(0.5f, 0.5f), 100.0f);
+            
+                                Debug.Log("Finished downloading!");
+            
+                            }
+
+                        });
+            */
+            
+
+                }
+            }
+            yield return new WaitForSeconds(3);
+            foreach(Transform transform in taticul.transform)
+            {
+                var idname = transform.gameObject.name.Split("_");
+                foreach(var y in texturi)
+                {
+                    if (y.Value == idname[0])
+                    {
+                        foreach(Transform t in transform.gameObject.transform)
+                        {
+                            RawImage img;
+                            img = t.GetComponent<RawImage>();
+                            if (img != null)
+                            {
+                                img.texture = y.Key;
+                            }
+                        }
+                    }
+                }
             }
         }
 
     }
+        /*
+    IEnumerator LoadImage(string MediaUrl)
+    {
+        UnityWebRequest request = UnityWebRequestTexture.GetTexture(MediaUrl); //Create a request
+        yield return request.SendWebRequest(); //Wait for the request to complete
+        if (request.isNetworkError || request.isHttpError)
+        {
+            Debug.Log(request.error);
+        }
+        else
+        {
+            rawImage.texture = ((DownloadHandlerTexture)request.downloadHandler).texture;
+            // setting the loaded image to our object
+        }
+    }
+        */
     public  IEnumerator GetMeniu(string key, DatabaseReference reference)
     {
-        meniuri.Clear();
+        List<MenuModel> meniu = new List<MenuModel>();
         var MeniuLog = reference.Child("Restaurante").Child(key).Child("Meniu").GetValueAsync();
         yield return new WaitUntil(predicate: () => MeniuLog.IsCompleted);
         if (MeniuLog != null)
         {
             foreach (var y in MeniuLog.Result.Children)
             {
-                meniuri.Add(new MenuModel
+                meniu.Add(new MenuModel
                 {
                     Nume = y.Key,
                     Pret = int.Parse(y.GetValue(true).ToString())
@@ -88,6 +227,7 @@ public class GetRestaurante : MonoBehaviour
             }
            
         }
+        meniuri.Add(meniu);
 
     }
 }
