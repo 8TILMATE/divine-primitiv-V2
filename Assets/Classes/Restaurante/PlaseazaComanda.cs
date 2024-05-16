@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 public class PlaseazaComanda : MonoBehaviour
 {
 
-    private OpenAIApi openAi;
+    private OpenAIApi openAi = new OpenAIApi("sk-proj-TbgHgQoQNLcH2C5limiQT3BlbkFJNed7C817K2uf9FWgNFsh", "org-gcb4HKEJ9NBpp0SAu3CbMWc9");
     private List<ChatMessage> messages = new List<ChatMessage>();
     public string raspuns;
     private LivratorModel livrator;
