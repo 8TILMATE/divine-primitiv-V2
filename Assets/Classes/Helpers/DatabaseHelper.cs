@@ -10,8 +10,15 @@ public static class DatabaseHelper
     public static UserModel utilizatorLogat = new UserModel();
     public static List<RestaurantModel> restaurante = new List<RestaurantModel>();
     // Start is called before the first frame update
+    public static int SelectedShopId = 0;
+    public static int ShopperId=0;
     public static  string connectionString = "https://divine-f6fa7-default-rtdb.europe-west1.firebasedatabase.app/";
     public static List<List<MenuModel>> meniuri = new List<List<MenuModel>>();
+    public static List<MenuModel> CosDeCumparaturi = new List<MenuModel>();
+    public static int SubtotalComanda = 0;
+    public static List<ComandaModel> comenzi = new List<ComandaModel>();
+    public static List<LivratorModel> Livratori = new List<LivratorModel>();
+
    
 
     public static IEnumerator Login(string email,string parola, DatabaseReference reference)

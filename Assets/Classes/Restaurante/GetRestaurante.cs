@@ -18,6 +18,8 @@ public class GetRestaurante : MonoBehaviour
     public GameObject Canvas1;
     public GameObject Canvas2;
     public GameObject Container;
+    public RawImage textura;
+    public Text SubTotalComanda;
     public List<KeyValuePair<Texture2D, string>> texturi = new List<KeyValuePair<Texture2D, string>>();
     // Start is called before the first frame update
     RawImage rawImage ;
@@ -55,7 +57,7 @@ public class GetRestaurante : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        SubTotalComanda.text = "Subtotal Comanda = " + DatabaseHelper.SubtotalComanda.ToString() + " lei";
     }
     public  IEnumerator GetRestaurante1(DatabaseReference reference)
     {
@@ -116,6 +118,7 @@ public class GetRestaurante : MonoBehaviour
                         om.Canvas1 = Canvas1;
                         om.Canvas2 = Canvas2;
                         om.Container = Container;
+                        om.RestaurantImagine = textura;
                     }
                 }
                 storage = FirebaseStorage.DefaultInstance;
