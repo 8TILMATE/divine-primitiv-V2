@@ -6,12 +6,14 @@ using OpenAI;
 using System.Globalization;
 using System.Threading;
 using Firebase.Database;
+using System.IO;
 using System.Threading.Tasks;
+
 
 public class PlaseazaComanda : MonoBehaviour
 {
 
-    private OpenAIApi openAi = new OpenAIApi("sk-proj-TbgHgQoQNLcH2C5limiQT3BlbkFJNed7C817K2uf9FWgNFsh", "org-gcb4HKEJ9NBpp0SAu3CbMWc9");
+    private OpenAIApi openAi;//= new OpenAIApi("sk-proj-TbgHgQoQNLcH2C5limiQT3BlbkFJNed7C817K2uf9FWgNFsh", "org-gcb4HKEJ9NBpp0SAu3CbMWc9");
     private List<ChatMessage> messages = new List<ChatMessage>();
     public string raspuns;
     private LivratorModel livrator;
@@ -19,6 +21,11 @@ public class PlaseazaComanda : MonoBehaviour
     DatabaseReference reference;
     public async void AskGPT(string newText)
     {
+       // using(StreamReader rdr = new StreamReader("Assets/Classes/Restaurante/Credidentials.txt"))
+        //{
+          //  var line = rdr.ReadLine().Split(' ');
+            //openAi = new OpenAIApi(line[0].Trim(), line[1].Trim());
+        //}
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.Content = newText;
         chatMessage.Role = "user";
@@ -33,6 +40,7 @@ public class PlaseazaComanda : MonoBehaviour
             var chatResponse = response.Choices[0].Message;
             messages.Add(chatResponse);
             raspuns=chatResponse.Content;
+            Debug.Log(raspuns);
         }
 
 
@@ -43,7 +51,9 @@ public class PlaseazaComanda : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-       // StartChatGPTRequest("transform this into lat and lon coordinates 'Strada rizer nr55A, Galati, Romania''. Give me the results in this format: lat:;lon: without saying anything else");
+        // StartChatGPTRequest("transform this into lat and lon coordinates 'Strada rizer nr55A, Galati, Romania''. Give me the results in this format: lat:;lon: without saying anything else");
+        AskGPT("transform this into lat and lon coordinates 'Strada rizer nr55A, Galati, Romania'. Give me the results in this format: ',' without saying anything else");
+    
     }
 
     // Update is called once per frame
