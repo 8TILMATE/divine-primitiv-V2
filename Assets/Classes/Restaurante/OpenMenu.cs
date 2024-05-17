@@ -39,7 +39,7 @@ public class OpenMenu : MonoBehaviour
             }
         }
         RestaurantImagine.texture = texturaRest;
-
+        Container.transform.DetachChildren();
         foreach (var restaurant in DatabaseHelper.restaurante)
         {
             if (restaurant.Id == int.Parse(idnume[0]))

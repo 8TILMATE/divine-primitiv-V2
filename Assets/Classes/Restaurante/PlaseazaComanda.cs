@@ -9,11 +9,12 @@ using Firebase.Database;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEditor;
+using Firebase.Database;
 
 public class PlaseazaComanda : MonoBehaviour
 {
 
-    private OpenAIApi openAi = new OpenAIApi("sk-proj-GqexhIq0ST9udsYjK2vwT3BlbkFJYnYqaHsHvOFqATcbhZOX", "org-gcb4HKEJ9NBpp0SAu3CbMWc9");
+    private OpenAIApi openAi = new OpenAIApi("sk-proj-CbLvOlhPYF0lkvofwMzjT3BlbkFJvaxdXak3vJTyBLq8Jf9n", "org-gcb4HKEJ9NBpp0SAu3CbMWc9");
     private List<ChatMessage> messages = new List<ChatMessage>();
     public string raspuns;
     private LivratorModel livrator;
@@ -67,7 +68,7 @@ public class PlaseazaComanda : MonoBehaviour
     }
     public IEnumerator PlaseazaComenzi()
     {
-        AskGPT("transform this into lat and lon coordinates 'Strada rizer nr55A, Galati, Romania'. Give me the results in this format: ',' without saying anything else");
+        AskGPT("transform this into lat and lon coordinates '"+DatabaseHelper.AdresaCasa+"'. Give me the high accurate results in this format: ',' without saying anything else");
         yield return new WaitForSeconds(3);
         var line = raspuns.Split(",");
 
@@ -81,6 +82,14 @@ public class PlaseazaComanda : MonoBehaviour
             IdUser = DatabaseHelper.ShopperId,
             Id = DatabaseHelper.comenzi.Count + 1,
         };
+        foreach(var y in DatabaseHelper.restaurante)
+        {
+            if (y.Id == model.IdRestaurant)
+            {
+                DatabaseHelper.LatR = y.lat;
+                DatabaseHelper.LonR = y.lon;
+            }
+        }
         Firebase.AppOptions options = new Firebase.AppOptions
         {
             DatabaseUrl = new System.Uri(DatabaseHelper.connectionString)
@@ -147,7 +156,17 @@ public class PlaseazaComanda : MonoBehaviour
                         LastId = Id;
                     }
                 }
+                
             }
+            /*
+            foreach (var y in DatabaseHelper.restaurante)
+            {
+                if (y.Id == model.IdRestaurant+1)
+                {
+                    DatabaseHelper.LatR = y.lat;
+                    DatabaseHelper.LonR = y.lon;
+                }
+            }*/
             model.Id = LastId + 1;
             reference.Child("Comenzi").Child(model.Id.ToString()).Child("AdresaLat").SetValueAsync(model.AdresaLat);
             reference.Child("Comenzi").Child(model.Id.ToString()).Child("AdresaLon").SetValueAsync(model.AdresaLon);
@@ -157,12 +176,16 @@ public class PlaseazaComanda : MonoBehaviour
             reference.Child("Comenzi").Child(model.Id.ToString()).Child("LivratorLat").SetValueAsync(model.LivratorLat);
             reference.Child("Comenzi").Child(model.Id.ToString()).Child("LivratorLon").SetValueAsync(model.LivratorLon);
             reference.Child("Comenzi").Child(model.Id.ToString()).Child("IdLivrator").SetValueAsync(model.IdLivrator);
+
             foreach (MenuModel menu in model.Meniu)
             {
                 reference.Child("Comenzi").Child(model.Id.ToString()).Child("Meniu").Child(menu.Nume).SetValueAsync(menu.Pret);
             }
+            DatabaseHelper.LatH = model.AdresaLat;
+            DatabaseHelper.LonH = model.AdresaLon;
             reference.Child("Comenzi").Child(model.Id.ToString()).Child("StatusComanda").SetValueAsync(model.StatusComanda);
             EditorUtility.DisplayDialog("Comanda Plasata cu Succes", "Comanda plasata cu Succes", "Ok");
+            GoToMap.GoToHarta();
         }
 
 

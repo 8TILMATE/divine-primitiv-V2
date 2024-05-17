@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Firebase.Database;
 using UnityEditor;
-
+using UnityEngine.SceneManagement;
 public static class DatabaseHelper
 {
     public static List<UserModel> utilizatori = new List<UserModel>();
@@ -20,8 +20,11 @@ public static class DatabaseHelper
     public static List<LivratorModel> Livratori = new List<LivratorModel>();
     public static LivratorModel livratorComanda = new LivratorModel();
     public static ComandaModel comanda = new ComandaModel();
-
-   
+    public static string AdresaCasa;
+    public static float LatH, LonH;
+    public static float LatR, LonR;
+    public static int pekRestaurant=1;
+    
 
     public static IEnumerator Login(string email,string parola, DatabaseReference reference)
     {
@@ -32,6 +35,7 @@ public static class DatabaseHelper
         {
             foreach (var y in UserLog.Result.Children)
             {
+                
                 UserModel user = new UserModel
                 {
                     Id = int.Parse(y.Key.ToString()),
@@ -39,6 +43,10 @@ public static class DatabaseHelper
                     Nume = y.Child("Nume").GetValue(true).ToString(),
                     Parola = y.Child("Parola").GetValue(true).ToString(),
                 };
+                if (email == user.Email)
+                {
+                    DatabaseHelper.ShopperId = user.Id;
+                }
                 utilizatori.Add(user);
                 Debug.Log(user.Email);
             }
@@ -50,6 +58,7 @@ public static class DatabaseHelper
             {
                 Debug.LogWarning("Logged!");
                 EditorUtility.DisplayDialog("Logat", "Utilizator inregistrat cu succes!","Ok");
+                SceneManager.LoadScene("MainMenu");
                 utilizatorLogat = y;
                 break;
             }
@@ -89,6 +98,7 @@ public static class DatabaseHelper
         reference.Child("Users").Child("Utilizatori").Child(model.Id.ToString()).Child("Id").SetValueAsync
           (model.Id);
         EditorUtility.DisplayDialog("Inregistrat", "Utilizator inregistrat cu succes!", "Ok");
+
 
 
 

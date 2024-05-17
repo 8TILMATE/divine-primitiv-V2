@@ -11,6 +11,8 @@ using Firebase.Extensions;
 public class GetRestaurante : MonoBehaviour
 {
     public static List<List<MenuModel>> meniuri = new List<List<MenuModel>>();
+    public static List<List<MenuModel>> meniuri1 = new List<List<MenuModel>>();
+
     DatabaseReference reference;
     public  GameObject taticul;
     private  GameObject gam;
@@ -51,13 +53,46 @@ public class GetRestaurante : MonoBehaviour
         var firebaseDatabase = FirebaseDatabase.GetInstance(app, DatabaseHelper.connectionString);
         reference = firebaseDatabase.RootReference;
         StartCoroutine(GetRestaurante1(reference));
+        StartCoroutine(GetComenzi(reference));
 
     }
 
     // Update is called once per frame
     void Update()
     {
-        SubTotalComanda.text = "Total = " + DatabaseHelper.SubtotalComanda.ToString() + " lei";
+        //SubTotalComanda.text = "Total = " + DatabaseHelper.SubtotalComanda.ToString() + " lei";
+    }
+    public IEnumerator GetComenzi(DatabaseReference reference)
+    {
+        DatabaseHelper.comenzi.Clear();
+        var RestauranteLog = reference.Child("Comenzi").GetValueAsync();
+        yield return new WaitUntil(predicate: () => RestauranteLog.IsCompleted);
+        if (RestauranteLog != null)
+        {
+            foreach (var y in RestauranteLog.Result.Children)
+            {
+                Debug.Log(y.Key);
+                ComandaModel model = new ComandaModel
+                {
+                    Id = int.Parse(y.Key),
+                    IdLivrator = int.Parse(y.Child("IdLivrator").GetValue(true).ToString()),
+                    IdUser = int.Parse(y.Child("IdUser").GetValue(true).ToString()),
+                    IdRestaurant = int.Parse(y.Child("IdRestaurant").GetValue(true).ToString()),
+                    LivratorLat = float.Parse(y.Child("LivratorLat").GetValue(true).ToString()),
+                    LivratorLon = float.Parse(y.Child("LivratorLon").GetValue(true).ToString()),
+                    AdresaLat = float.Parse(y.Child("AdresaLat").GetValue(true).ToString()),
+                    AdresaLon = float.Parse(y.Child("AdresaLon").GetValue(true).ToString()),
+                    StatusComanda = int.Parse(y.Child("StatusComanda").GetValue(true).ToString()),
+                };
+                yield return StartCoroutine(GetMeniuComanda(model.Id.ToString(), reference));
+                //model.Meniu = meniuri;
+                DatabaseHelper.comenzi.Add(model);
+            }
+            for (int i = 0; i < DatabaseHelper.comenzi.Count; i++)
+            {
+                DatabaseHelper.comenzi[i].Meniu = meniuri1[i];
+            }
+        }
     }
     public  IEnumerator GetRestaurante1(DatabaseReference reference)
     {
@@ -95,6 +130,7 @@ public class GetRestaurante : MonoBehaviour
         {
             DatabaseHelper.restaurante[i].Meniu = meniuri[i];
         }
+        
         foreach (var x in DatabaseHelper.restaurante)
         {
             gam=Instantiate(toSpawn, taticul.transform.position, Quaternion.identity) as GameObject;
@@ -233,5 +269,28 @@ public class GetRestaurante : MonoBehaviour
         }
         meniuri.Add(meniu);
 
+
+    }
+    public IEnumerator GetMeniuComanda(string key, DatabaseReference reference)
+    {
+        List<MenuModel> meniu = new List<MenuModel>();
+        var MeniuLog = reference.Child("Comenzi").Child(key).Child("Meniu").GetValueAsync();
+        yield return new WaitUntil(predicate: () => MeniuLog.IsCompleted);
+        if (MeniuLog != null)
+        {
+            foreach (var y in MeniuLog.Result.Children)
+            {
+                meniu.Add(new MenuModel
+                {
+                    Nume = y.Key,
+                    Pret = int.Parse(y.GetValue(true).ToString())
+                });
+                Debug.Log(y.Key);
+            }
+
+        }
+        meniuri1.Add(meniu);
+
     }
 }
+
